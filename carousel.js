@@ -1,15 +1,16 @@
 class Carousel {
-  constructor(containerID = '#carousel', slideID = '.slide') {
-    this.container = document.querySelector(containerID);
-    this.slides = document.querySelectorAll(slideID);
-  
-    this.interval = 2000;
-  }
+  constructor(p) {
+    let settings = {...{containerID: '#carousel', interval: 5000, isPlaying: true, slideID: '.slide'}, ...p};
+
+    this.container = document.querySelector(settings.containerID);
+    this.slides = this.container.querySelectorAll(settings.slideID);
+    this.interval = settings.interval;
+    this.isPlaying = settings.isPlaying;
+  } 
 
   _initProps() { 
     this.currentSlide = 0;
     this.slidesCount = this.slides.length;
-    this.isPlaying = true;
   
     this.CODE_SPACE = 'Space';
     this.CODE_LEFT_ARROW = 'ArrowLeft';
@@ -22,19 +23,27 @@ class Carousel {
   
   _initControls() {
     const controls = document.createElement('div');
-    const PAUSE =`<span id="pause-btn" class="control control-pause">${this.FA_PAUSE}</span>`;
+    const PAUSE =`<span id="pause-btn" class="control control-pause">
+                    <span id="fa-pause-icon">${this.FA_PAUSE}</span>
+                    <span id="fa-play-icon">${this.FA_PLAY}</span>
+                  </span>`;
     const PREV =`<span id="prev-btn" class="control control-prev">${this.FA_PREV}</span>`;
     const NEXT =`<span id="next-btn" class="control control-next">${this.FA_NEXT}</span>`;
 
     controls.setAttribute('class', 'controls');
     controls.innerHTML = PAUSE + PREV + NEXT;
 
-    this.container.appendChild(controls);
+    this.container.append(controls);
 
 
     this.pauseButton = document.querySelector('#pause-btn');
     this.prevButton = document.querySelector('#prev-btn');
     this.nextButton = document.querySelector('#next-btn');
+
+    this.pauseIcon = this.container.querySelector('#fa-pause-icon');
+    this.playIcon = this.container.querySelector('#fa-play-icon')
+    
+    this.isPlaying ? this.pauseIcon.style.opacity = 1 : this.playIcon.style.opacity = 1;
   }
 
   _initIndicators() {
@@ -48,10 +57,10 @@ class Carousel {
       indicator.setAttribute('class', 'indicator');
       indicator.dataset.slideTo = `${i}`;
       if (i === 0) indicator.classList.add('active');
-      indicators.appendChild(indicator);
+      indicators.append(indicator);
     }
 
-    this.container.appendChild(indicators);
+    this.container.append(indicators);
 
     this.indContainer = this.container.querySelector('.indicators');
     this.indItems = this.container.querySelectorAll('.indicator');
@@ -63,6 +72,8 @@ class Carousel {
     this.nextButton.addEventListener('click', this.next.bind(this));
     this.indContainer.addEventListener('click', this._indicate.bind(this));
     document.addEventListener('keydown', this.pressKey.bind(this));
+    this.container.addEventListener('mouseenter', this._pause.bind(this))
+    this.container.addEventListener('mouseleave', this._play.bind(this))
   }
 
   _gotoSlide(n) {
@@ -91,16 +102,20 @@ class Carousel {
 
   _pause() {
     if (this.isPlaying) {
-      clearInterval(this.timerID);
+      this.pauseIcon.style.opacity = 0;
+      this.playIcon.style.opacity = 1;
       this.isPlaying = false;
-      this.pauseButton.innerHTML = this.FA_PLAY;
+      clearInterval(this.timerID);
     }
   }
 
-  _play () {
-    this.timerID = setInterval(() => this._gotoNext(), this.interval);
-    this.isPlaying = true;
-    this.pauseButton.innerHTML = this.FA_PAUSE;
+  _play() {
+    if (!this.isPlaying) {
+      this.pauseIcon.style.opacity = 1;
+      this.playIcon.style.opacity = 0;
+      this.isPlaying = true;
+      this.timerID = setInterval(() => this._gotoNext(), this.interval);
+    }
   }
 
   pausePlay() {
@@ -129,7 +144,8 @@ class Carousel {
     this._initControls();
     this._initIndicators();
     this._initListeners();
-    this.timerID = setInterval(() => this._gotoNext(), this.interval);
+
+    if (this.isPlaying) this.timerID = setInterval(() => this._gotoNext(), this.interval);
   }
 }
 
